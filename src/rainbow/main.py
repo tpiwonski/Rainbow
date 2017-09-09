@@ -1,15 +1,15 @@
 import click
+import sys
+
+from rainbow import Rainbow, Pattern
 
 
 @click.command()
-@click.option('--pattern', multiple=True, type=(str, str, str, str))
+@click.option('--pattern', multiple=True, type=(str, str, str, str), default=('', 'white', 'black', 'noeffect'))
 def run(pattern):
-    import sys
-    from rainbow import Rainbow, Pattern
-
     patterns = []
-    for p in pattern:
-        patterns.append(Pattern(pattern=p[0], fcolor=p[1], style=p[2], bgcolor=p[3]))
+    for r, p in enumerate(pattern):
+        patterns.append(Pattern(pattern=p[0], fgcolor=p[1], style=p[3], bgcolor=p[2], rank=r))
 
     r = Rainbow(patterns)
     for line in sys.stdin:

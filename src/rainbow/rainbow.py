@@ -3,7 +3,7 @@ import re
 
 class Pattern(object):
 
-    fcolors = dict(
+    fgcolors = dict(
         black=30,
         red=31,
         green=32,
@@ -33,20 +33,22 @@ class Pattern(object):
         white=47
     )
 
-    def __init__(self, pattern, fcolor, style, bgcolor):
+    def __init__(self, pattern, fgcolor, style, bgcolor, rank):
         self.pattern = "({pattern})".format(pattern=pattern)
-        self.fcolor = fcolor
+        self.fgcolor = fgcolor
         self.style = style
         self.bgcolor = bgcolor
+        self.rank = rank
 
     def match(self, text):
-        return [Match(self, m.group(0), m.start(0), m.end(0)) for m in re.finditer(self.pattern, text, re.MULTILINE)]
+        return [Match(self, m.group(0), m.start(0), m.end(0))
+                for m in re.finditer(self.pattern, text, re.MULTILINE)]
 
-    def color(self, value):
+    def get_coloured(self, text):
         color = "\033[{style};{fgcolor};{bgcolor}m".format(style=self.styles[self.style],
-                                                           fgcolor=self.fcolors[self.fcolor],
+                                                           fgcolor=self.fgcolors[self.fgcolor],
                                                            bgcolor=self.bgcolors[self.bgcolor])
-        return "{color}{value}\033[00m".format(color=color, value=value)
+        return "{color}{text}\033[00m".format(color=color, text=text)
 
 
 class Match(object):
@@ -58,16 +60,20 @@ class Match(object):
         self.end = end
 
     def overlap(self, match):
-        return (match.start < self.start < match.end) or (match.start < self.end < match.end)
+        return (match.start <= self.start <= match.end) or (match.start <= self.end <= match.end) or\
+               (self.start <= match.start <= self.end) or (self.start <= match.end <= self.end)
 
     def length(self):
         return self.end - self.start
 
-    def find(self, text, start):
-        return text.index(self.value, start)
+    def find_value(self, text, start):
+        return text.find(self.value, start)
 
-    def colored(self):
-        return self.pattern.color(self.value)
+    def get_coloured_value(self):
+        return self.pattern.get_coloured(self.value)
+
+    def get_rank(self):
+        return self.pattern.rank
 
 
 class Rainbow(object):
@@ -90,28 +96,22 @@ class Rainbow(object):
 
     def filter_matches(self, matches):
         result = []
-        while matches:
-            match1 = matches.pop()
-            ok = True
-            for match2 in matches:
-                if match1.overlap(match2):
-                    if match1.length() < match2.length():
-                        ok = False
-                        break
-
-            if ok or not matches:
-                result.append(match1)
+        for current in matches:
+            overlapping = [m for m in matches
+                           if m != current and m.overlap(current) and m.get_rank() > current.get_rank()]
+            if not overlapping:
+                result.append(current)
 
         return sorted(result, key=lambda r: r.start)
 
     def replace_matches(self, matches, line):
         start = 0
         for match in matches:
-            index = match.find(line, start)
+            index = match.find_value(line, start)
             if index == -1:
                 return line
 
-            result = line[0:index] + match.colored()
+            result = line[0:index] + match.get_coloured_value()
             start = len(result)
             line = result + line[index + len(match.value):]
 
