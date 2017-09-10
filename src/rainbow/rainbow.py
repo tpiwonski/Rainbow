@@ -97,27 +97,19 @@ class Rainbow(object):
     def filter_matches(self, matches):
         result = []
 
-        # xxx = list(matches)
         while matches:
             m = matches.pop()
             ok = True
             for o in matches:
                 if o != m and o.overlap(m):
                     matches.remove(o)
-                    yyy = self.foo(m, o)
-                    # xxx.extend(yyy)
-                    matches.extend(yyy)
+                    foos = self.foo(m, o)
+                    matches.extend(foos)
                     ok = False
                     break
 
             if ok:
                 result.append(m)
-
-        # for current in matches:
-        #     overlapping = [m for m in matches
-        #                    if m != current and m.overlap(current) and m.get_rank() > current.get_rank()]
-        #     if not overlapping:
-        #         result.append(current)
 
         return sorted(result, key=lambda r: r.start)
 
@@ -135,6 +127,13 @@ class Rainbow(object):
         return line
 
     def foo(self, match1, match2):
+        """
+        Waiting for a better name and to be refactored:)
+
+        :param match1:
+        :param match2:
+        :return:
+        """
         result = []
 
         if match1.start <= match2.start:
