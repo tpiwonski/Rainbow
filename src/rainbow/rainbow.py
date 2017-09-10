@@ -60,8 +60,8 @@ class Match(object):
         self.end = end
 
     def overlap(self, match):
-        return (match.start <= self.start <= match.end) or (match.start <= self.end <= match.end) or\
-               (self.start <= match.start <= self.end) or (self.start <= match.end <= self.end)
+        return (match.start <= self.start < match.end) or (match.start < self.end <= match.end) or\
+               (self.start <= match.start < self.end) or (self.start < match.end <= self.end)
 
     def length(self):
         return self.end - self.start
@@ -96,11 +96,28 @@ class Rainbow(object):
 
     def filter_matches(self, matches):
         result = []
-        for current in matches:
-            overlapping = [m for m in matches
-                           if m != current and m.overlap(current) and m.get_rank() > current.get_rank()]
-            if not overlapping:
-                result.append(current)
+
+        # xxx = list(matches)
+        while matches:
+            m = matches.pop()
+            ok = True
+            for o in matches:
+                if o != m and o.overlap(m):
+                    matches.remove(o)
+                    yyy = self.foo(m, o)
+                    # xxx.extend(yyy)
+                    matches.extend(yyy)
+                    ok = False
+                    break
+
+            if ok:
+                result.append(m)
+
+        # for current in matches:
+        #     overlapping = [m for m in matches
+        #                    if m != current and m.overlap(current) and m.get_rank() > current.get_rank()]
+        #     if not overlapping:
+        #         result.append(current)
 
         return sorted(result, key=lambda r: r.start)
 
@@ -116,3 +133,34 @@ class Rainbow(object):
             line = result + line[index + len(match.value):]
 
         return line
+
+    def foo(self, match1, match2):
+        result = []
+
+        if match1.start <= match2.start:
+            current = match1
+            next = match2
+        else:
+            current = match2
+            next = match1
+
+        if next.get_rank() > current.get_rank():
+            l = next.start - current.start
+            v = current.value[:l]
+            m = Match(current.pattern, v, current.start, next.start)
+            result.append(m)
+
+            current, next = next, Match(current.pattern, current.value[l:], next.start, current.end)
+
+        if current.end >= next.end:
+            result.append(current)
+            return result
+
+        result.append(current)
+
+        l = next.end - current.end
+        v = next.value[-l:]
+        current = Match(next.pattern, v, current.end, next.end)
+        result.append(current)
+
+        return result
