@@ -4,6 +4,7 @@ import re
 class Pattern(object):
 
     fgcolors = dict(
+        default=39,
         black=30,
         red=31,
         green=32,
@@ -15,15 +16,17 @@ class Pattern(object):
     )
 
     styles = dict(
-        noeffect=0,
+        default=0,
         bold=1,
-        underline=2,
-        negative1=3,
-        negative2=5
+        opaque=2,
+        italic=3,
+        underline=4,
+        crossout=9
     )
 
     bgcolors = dict(
-        black=40,
+        default=49,
+        grey=40,
         red=41,
         green=42,
         yellow=43,
@@ -32,6 +35,10 @@ class Pattern(object):
         cyan=46,
         white=47
     )
+
+    prefix = '\x1b['
+    suffix = 'm'
+    reset = "{prefix}00{suffix}".format(prefix=prefix, suffix=suffix)
 
     def __init__(self, pattern, fgcolor, style, bgcolor, rank):
         self.pattern = "({pattern})".format(pattern=pattern)
@@ -45,10 +52,15 @@ class Pattern(object):
                 for m in re.finditer(self.pattern, text, re.MULTILINE)]
 
     def get_coloured(self, text):
-        color = "\033[{style};{fgcolor};{bgcolor}m".format(style=self.styles[self.style],
-                                                           fgcolor=self.fgcolors[self.fgcolor],
-                                                           bgcolor=self.bgcolors[self.bgcolor])
-        return "{color}{text}\033[00m".format(color=color, text=text)
+        color = "{prefix}{style};{fgcolor};{bgcolor}{suffix}".format(
+            prefix=self.prefix,
+            style=self.styles[self.style],
+            fgcolor=self.fgcolors[self.fgcolor],
+            bgcolor=self.bgcolors[self.bgcolor],
+            suffix=self.suffix
+        )
+
+        return "{color}{text}{reset}".format(color=color, text=text, reset=self.reset)
 
 
 class Match(object):
@@ -129,10 +141,6 @@ class Rainbow(object):
     def foo(self, match1, match2):
         """
         Waiting for a better name and to be refactored:)
-
-        :param match1:
-        :param match2:
-        :return:
         """
         result = []
 
