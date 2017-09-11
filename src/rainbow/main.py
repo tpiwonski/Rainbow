@@ -5,7 +5,7 @@ from rainbow import Rainbow, Pattern
 
 
 @click.command()
-@click.option('--pattern', multiple=True, type=(str, str, str, str), default=('', 'white', 'black', 'noeffect'))
+@click.option('--pattern', multiple=True, type=(str, str, str, str))
 def run(pattern):
     patterns = []
     for r, p in enumerate(pattern):
